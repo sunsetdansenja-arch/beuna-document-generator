@@ -1,545 +1,539 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beuna System - Workspace & Docs Generator</title>
+    <title>Beuna OS - Command Center</title>
+    <!-- Favicon Logo Beuna -->
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/sunsetdansenja-arch/beuna-agency/main/beuna%20logo%20v2.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        /* Apple OS & Glassmorphism Aesthetic */
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            color: #1d1d1f;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
-        }
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        .card-hover:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.1);
-            background: rgba(255, 255, 255, 0.9);
-        }
-        
-        /* A4 Paper Settings for Web Preview */
-        .a4-paper {
-            width: 210mm;
-            min-height: 297mm;
-            background: white;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            margin: 0 auto;
-            padding: 20mm;
-            position: relative;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #09090b;
+            color: #fafafa;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(153, 27, 27, 0.15) 0px, transparent 50%); /* Maroon tint */
+            background-attachment: fixed;
         }
 
-        /* Print Media Query: Pixel Perfect A4 Output */
-        @page {
-            size: A4;
-            margin: 0;
+        /* --- UI AESTHETICS --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
+        .folder-tab {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.5rem 1.5rem; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none;
+            border-radius: 0.75rem 0.75rem 0 0; font-size: 0.7rem;
+            font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em;
+            color: rgba(255,255,255,0.7);
+        }
+        .folder-content {
+            background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0 1.5rem 1.5rem 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .folder-content-grid { border-radius: 0 1rem 1rem 1rem; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.08); transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.15);
+        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        /* --- PDF A4 AESTHETICS (STRICTLY LIGHT) --- */
+        .a4-paper {
+            width: 210mm; min-height: 297mm; background: white;
+            color: #111827; /* Force dark text for print */
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3); margin: 0 auto; padding: 20mm; position: relative;
+        }
+        .a4-paper * { border-color: #e5e7eb; } /* Force light borders inside A4 */
+
+        @page { size: A4; margin: 0; }
         @media print {
-            body { background: white; }
+            body { background: white; color: black; }
             .no-print { display: none !important; }
-            .a4-paper {
-                box-shadow: none;
-                margin: 0;
-                padding: 15mm;
-                width: 100%;
-                min-height: auto;
-            }
-            .print-exact {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
+            .a4-paper { box-shadow: none; margin: 0; padding: 15mm; width: 100%; min-height: auto; }
+            .print-exact { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
-<body class="antialiased overflow-x-hidden">
+<body class="antialiased flex h-screen overflow-hidden">
 
-    <!-- APP CONTAINER -->
-    <div id="app" class="w-full h-screen flex flex-col">
-        
-        <!-- ================= 1. LOGIN VIEW ================= -->
-        <div id="loginView" class="flex-1 flex items-center justify-center p-6 transition-all duration-500">
-            <div class="glass p-8 rounded-3xl w-full max-w-md">
-                <div class="text-center mb-8">
-                    <h1 class="text-3xl font-extrabold tracking-tight text-gray-900 mb-2"><span class="text-red-800">Beuna</span> System</h1>
-                    <p class="text-sm text-gray-500">Authentication Gateway</p>
-                </div>
-                
-                <div class="bg-blue-50 text-blue-800 p-3 rounded-lg text-xs mb-6 border border-blue-100">
-                    <strong>Testing Accounts:</strong><br>
-                    Managerial &rarr; User: <b>admin</b> | Pass: <b>123</b><br>
-                    Developer &rarr; User: <b>dev</b> | Pass: <b>123</b>
-                </div>
-
-                <form class="space-y-4" onsubmit="handleLogin(event)">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Username</label>
-                        <input type="text" id="username" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-800 focus:outline-none transition-all" placeholder="admin / dev" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Password</label>
-                        <input type="password" id="password" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-800 focus:outline-none transition-all" placeholder="***" required>
-                    </div>
-                    <button type="submit" class="w-full bg-gray-900 hover:bg-black text-white font-medium py-3 rounded-xl transition-all active:scale-95 mt-4 shadow-lg">
-                        Login ke Workspace
-                    </button>
-                </form>
+    <!-- ================= 1. LOGIN VIEW ================= -->
+    <div id="loginView" class="fixed inset-0 flex items-center justify-center z-50 bg-[#09090b] transition-all duration-500">
+        <div class="folder-content p-10 w-full max-w-sm flex flex-col items-center relative">
+            <img src="https://raw.githubusercontent.com/sunsetdansenja-arch/beuna-agency/main/beuna%20logo%20v2.png" alt="Beuna Logo" class="w-16 h-16 mb-4 opacity-90">
+            <h1 class="text-2xl font-bold mb-1 tracking-tight">Beuna OS</h1>
+            <p class="text-xs text-white/40 mb-8 text-center uppercase tracking-widest">Unified Command Center</p>
+            
+            <div class="w-full bg-white/5 border border-white/10 rounded-lg p-3 mb-6 text-[10px] text-white/50 text-center font-mono">
+                Admin: <b>admin / 123</b> <br> Dev: <b>dev / 123</b>
             </div>
-        </div>
 
-        <!-- ================= 2. DEVELOPER VIEW ================= -->
-        <div id="devView" class="hidden flex-1 flex flex-col p-6 max-w-4xl mx-auto w-full transition-all duration-500 no-print">
-            <header class="flex justify-between items-center mb-8 glass px-6 py-4 rounded-2xl">
-                <div>
-                    <h2 class="text-xl font-bold tracking-tight">Developer Workspace</h2>
-                    <p class="text-xs text-gray-500 mt-1">Sistem otomatis merekam ID Anda saat submit.</p>
+            <form id="loginForm" class="w-full space-y-4" onsubmit="handleLogin(event)">
+                <input type="text" id="username" placeholder="Username" class="w-full bg-black/30 border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-red-800/50" required>
+                <input type="password" id="password" placeholder="Password" class="w-full bg-black/30 border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-red-800/50" required>
+                <button type="submit" class="w-full bg-white text-black font-bold rounded-xl py-4 text-sm hover:bg-gray-200 transition-all">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= 2. DEVELOPER WORKSPACE ================= -->
+    <div id="devView" class="hidden w-full h-full overflow-y-auto p-6 md:p-10 no-print">
+        <div class="max-w-4xl mx-auto space-y-8">
+            <header class="flex justify-between items-center glass-panel p-6 rounded-2xl">
+                <div class="flex items-center gap-4">
+                    <img src="https://raw.githubusercontent.com/sunsetdansenja-arch/beuna-agency/main/beuna%20logo%20v2.png" alt="Logo" class="w-10 h-10">
+                    <div>
+                        <h2 class="text-xl font-bold">Dev Workspace</h2>
+                        <p class="text-xs text-white/40 uppercase tracking-widest mt-1">Maintenance Logger</p>
+                    </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span class="text-sm font-semibold bg-gray-100 px-3 py-1 rounded-lg" id="activeDevName">Dev_01</span>
-                    <button onclick="logout()" class="text-sm font-medium text-red-600 hover:text-red-800">Logout</button>
+                    <span class="text-xs font-mono bg-white/10 px-3 py-1 rounded text-white/70" id="devActiveId">DEV_01</span>
+                    <button onclick="logout()" class="text-xs text-red-400 hover:text-red-300"><i class="ph-bold ph-power text-lg"></i></button>
                 </div>
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Form Log -->
-                <div class="glass p-6 rounded-3xl">
-                    <h3 class="text-lg font-semibold mb-4 border-b border-gray-200 pb-2">Quick Log</h3>
-                    <form id="logForm" class="space-y-4" onsubmit="submitLog(event)">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Project</label>
-                            <select id="devProject" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-800 focus:outline-none" required></select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Kategori</label>
-                            <select id="devCategory" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-800 focus:outline-none" required>
-                                <option value="System Update">System Update / Flow n8n</option>
-                                <option value="Bug Fix">Bug Fix</option>
-                                <option value="Database">Database & Data Parsing</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Detail Aktivitas</label>
-                            <textarea id="devDetail" rows="3" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-800 focus:outline-none resize-none" placeholder="Contoh: Menyesuaikan regex untuk baca format WA baru..." required></textarea>
-                        </div>
-                        <button type="submit" class="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-xl transition-all active:scale-95 shadow-md">
-                            Kirim Log (Auto-Track ID)
-                        </button>
+                <!-- Log Form -->
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-sm font-bold mb-4 flex items-center gap-2"><i class="ph-bold ph-terminal-window"></i> Quick Log</h3>
+                    <form onsubmit="submitDevLog(event)" class="space-y-4">
+                        <select id="devProject" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/30" required></select>
+                        <select id="devCategory" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/30" required>
+                            <option value="System Update">System Update / Flow</option>
+                            <option value="Bug Fix">Bug Fix</option>
+                            <option value="Database">Database Management</option>
+                        </select>
+                        <textarea id="devDetail" rows="3" placeholder="Deskripsi perbaikan..." class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white/30 resize-none" required></textarea>
+                        <button type="submit" class="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-all text-sm">Save Log</button>
                     </form>
                 </div>
-
-                <!-- Log History -->
-                <div class="glass p-6 rounded-3xl overflow-y-auto max-h-[500px]">
-                    <h3 class="text-lg font-semibold mb-4 border-b border-gray-200 pb-2">Log Tim Developer</h3>
-                    <div id="devLogList" class="space-y-3"></div>
+                <!-- History -->
+                <div class="glass-panel p-6 rounded-2xl flex flex-col h-[400px]">
+                    <h3 class="text-sm font-bold mb-4 flex items-center gap-2"><i class="ph-bold ph-clock-counter-clockwise"></i> Today's Log</h3>
+                    <div id="devLogList" class="flex-1 overflow-y-auto custom-scroll space-y-3 pr-2"></div>
                 </div>
             </div>
-        </div>
-
-        <!-- ================= 3. MANAGERIAL DASHBOARD (HUB) ================= -->
-        <div id="managerDashboardView" class="hidden flex-1 flex flex-col p-6 max-w-5xl mx-auto w-full transition-all duration-500 no-print">
-            <header class="flex justify-between items-center mb-8 glass px-6 py-4 rounded-2xl">
-                <div>
-                    <h2 class="text-2xl font-bold tracking-tight"><span class="text-red-800">Beuna</span> HQ</h2>
-                    <p class="text-sm text-gray-500 mt-1">Managerial Document Center</p>
-                </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-sm font-semibold bg-gray-100 px-3 py-1 rounded-lg">Admin / Dimas</span>
-                    <button onclick="logout()" class="text-sm font-medium text-red-600 hover:text-red-800">Logout</button>
-                </div>
-            </header>
-
-            <h3 class="text-lg font-bold text-gray-800 mb-4 px-2">Pilih Jenis Dokumen yang Akan Dibuat:</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-2">
-                
-                <!-- OFFER LETTER -->
-                <div onclick="openGenerator('OFF')" class="glass p-6 rounded-3xl cursor-pointer card-hover border-t-4 border-t-gray-400">
-                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    </div>
-                    <h4 class="text-lg font-bold text-gray-900 mb-1">Offer Letter</h4>
-                    <p class="text-xs text-gray-500">Buat penawaran project baru ke client.</p>
-                </div>
-
-                <!-- INVOICE -->
-                <div onclick="openGenerator('INV')" class="glass p-6 rounded-3xl cursor-pointer card-hover border-t-4 border-t-red-800">
-                    <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4 text-red-800">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    </div>
-                    <h4 class="text-lg font-bold text-gray-900 mb-1">Invoice</h4>
-                    <p class="text-xs text-gray-500">Tagihan DP, Pelunasan, atau Bulanan.</p>
-                </div>
-
-                <!-- BAP -->
-                <div onclick="openGenerator('BAP')" class="glass p-6 rounded-3xl cursor-pointer card-hover border-t-4 border-t-blue-600">
-                    <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-4 text-blue-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-                    </div>
-                    <h4 class="text-lg font-bold text-gray-900 mb-1">BAP</h4>
-                    <p class="text-xs text-gray-500">Berita Acara Pemeliharaan (Auto-tarik log Dev).</p>
-                </div>
-
-                <!-- BAST -->
-                <div onclick="openGenerator('BAST')" class="glass p-6 rounded-3xl cursor-pointer card-hover border-t-4 border-t-green-600">
-                    <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-4 text-green-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                    </div>
-                    <h4 class="text-lg font-bold text-gray-900 mb-1">BAST</h4>
-                    <p class="text-xs text-gray-500">Berita Acara Serah Terima Project Baru.</p>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- ================= 4. MANAGERIAL GENERATOR (SPLIT SCREEN) ================= -->
-        <div id="managerGeneratorView" class="hidden flex-1 flex flex-col md:flex-row h-screen overflow-hidden transition-all duration-500">
-            
-            <!-- Sidebar Panel (No Print) -->
-            <aside class="w-full md:w-80 glass flex flex-col no-print h-full border-r border-white/40 shadow-xl z-10">
-                <div class="p-6 border-b border-gray-200/50 flex flex-col gap-4">
-                    <button onclick="backToDashboard()" class="text-xs font-semibold text-gray-500 hover:text-gray-900 flex items-center gap-1 w-fit">
-                        &larr; Kembali ke Dashboard
-                    </button>
-                    <div>
-                        <h2 class="text-xl font-bold tracking-tight">Generator</h2>
-                        <p class="text-xs text-red-800 font-bold mt-1" id="activeDocLabel">MODE: INVOICE</p>
-                    </div>
-                </div>
-                
-                <div class="flex-1 overflow-y-auto p-6 space-y-6">
-                    <!-- Global Input -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Project / Client</label>
-                        <select id="docProject" onchange="updatePreview()" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-red-800 focus:outline-none bg-white text-sm shadow-sm"></select>
-                    </div>
-
-                    <hr class="border-gray-200/50">
-
-                    <!-- Dynamic Forms Area -->
-                    <div id="dynamicFormContainer">
-                        
-                        <!-- Form INVOICE -->
-                        <div id="formINV" class="space-y-4 hidden">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Tagihan</label>
-                                <input type="text" id="invDesc" value="Tagihan Maintenance Bulanan" oninput="updatePreview()" class="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm shadow-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp)</label>
-                                <input type="number" id="invAmount" value="1500000" oninput="updatePreview()" class="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm shadow-sm">
-                            </div>
-                        </div>
-
-                        <!-- Form BAP -->
-                        <div id="formBAP" class="space-y-4 hidden">
-                            <div class="bg-blue-50 text-blue-800 p-3 rounded-lg text-xs border border-blue-100 leading-relaxed">
-                                <b>Automated Mode:</b><br>Sistem otomatis menarik log pekerjaan dari Developer berdasarkan Project yang dipilih.
-                            </div>
-                        </div>
-
-                        <!-- Form BAST / OFF (Placeholder for MVP) -->
-                        <div id="formOTHER" class="space-y-4 hidden">
-                            <div class="bg-gray-50 text-gray-600 p-3 rounded-lg text-xs border border-gray-200">
-                                Form parameter khusus untuk jenis dokumen ini akan tersedia pada iterasi berikutnya. (Saat ini pakai data default dummy).
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- Print Button Footer -->
-                <div class="p-6 border-t border-gray-200/50 bg-gray-50/50">
-                    <button onclick="window.print()" class="w-full bg-red-800 hover:bg-red-900 text-white font-medium py-3 rounded-xl shadow-md transition-all active:scale-95 flex justify-center items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                        Cetak / Download PDF
-                    </button>
-                </div>
-            </aside>
-
-            <!-- A4 Preview Area -->
-            <main class="flex-1 overflow-y-auto p-8 flex justify-center bg-gray-200/50 shadow-inner print:bg-white print:p-0 print:overflow-visible">
-                
-                <div class="a4-paper flex flex-col text-sm text-gray-800 print-exact" id="printArea">
-                    
-                    <!-- Universal Header -->
-                    <div class="flex justify-between items-start border-b-2 border-gray-900 pb-6 mb-6">
-                        <div>
-                            <h1 class="text-4xl font-extrabold tracking-tighter text-gray-900">BEUNA<span class="text-red-800">.</span></h1>
-                            <p class="text-xs text-gray-500 mt-1">System Analyst & Automation Specialist</p>
-                        </div>
-                        <div class="text-right">
-                            <h2 class="text-2xl font-bold text-gray-300 uppercase tracking-widest" id="previewTitle">DOC</h2>
-                            <p class="text-xs text-gray-600 mt-1 font-mono" id="previewDocNum">000/BEUNA/2026</p>
-                            <p class="text-xs text-gray-600 mt-1" id="previewDate">Tanggal: -</p>
-                        </div>
-                    </div>
-
-                    <!-- Universal Client Info -->
-                    <div class="mb-8">
-                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Ditujukan Kepada:</p>
-                        <p class="text-base font-bold text-gray-900" id="previewClient">Nama Klien</p>
-                        <p class="text-sm text-gray-600" id="previewProjectName">Project</p>
-                    </div>
-
-                    <!-- Dynamic Layouts Area -->
-                    <div class="flex-1">
-                        
-                        <!-- Layout INVOICE -->
-                        <div id="layoutINV" class="w-full hidden">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="border-b-2 border-gray-800">
-                                        <th class="py-3 font-bold text-xs uppercase text-gray-500">Deskripsi Layanan</th>
-                                        <th class="py-3 font-bold text-xs uppercase text-gray-500 text-right">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="border-b border-gray-200">
-                                        <td class="py-4 text-sm" id="renderInvDesc">Layanan</td>
-                                        <td class="py-4 text-sm font-mono text-right" id="renderInvAmount">Rp 0</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div class="flex justify-end mt-6">
-                                <div class="w-1/2 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                    <p class="text-xs text-gray-500 mb-1">Informasi Pembayaran:</p>
-                                    <p class="text-sm font-bold">BCA - 1234567890</p>
-                                    <p class="text-xs text-gray-600">a.n Dimas Santosa (Beuna Agency)</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Layout BAP -->
-                        <div id="layoutBAP" class="w-full hidden">
-                            <p class="text-sm mb-4 leading-relaxed text-gray-700">Menyatakan bahwa tim Beuna System telah melakukan pemeliharaan dan teknikal *support* dengan rincian log aktivitas sistem terlampir:</p>
-                            
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="border-b-2 border-gray-800 bg-gray-50 print:bg-transparent">
-                                        <th class="py-2 px-2 font-bold text-xs uppercase text-gray-500 w-1/5">Tanggal</th>
-                                        <th class="py-2 px-2 font-bold text-xs uppercase text-gray-500 w-1/5">Kategori</th>
-                                        <th class="py-2 px-2 font-bold text-xs uppercase text-gray-500 w-2/5">Detail Aktivitas</th>
-                                        <th class="py-2 px-2 font-bold text-xs uppercase text-gray-500 w-1/5 text-right">Dev ID</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="renderBapLogs">
-                                    <!-- Logs injected via JS -->
-                                </tbody>
-                            </table>
-                            <div id="bapEmptyState" class="hidden mt-6 text-center text-red-600 font-medium text-sm p-4 border border-red-200 bg-red-50 rounded-lg">
-                                Tidak ada catatan maintenance dari Developer untuk project ini.
-                            </div>
-                        </div>
-
-                        <!-- Layout BAST & OFF (Placeholder) -->
-                        <div id="layoutOTHER" class="w-full hidden text-center pt-20">
-                            <p class="text-gray-400 italic">Isi dokumen (Pasal, Ruang Lingkup, dll) akan digenerate otomatis di sini.</p>
-                        </div>
-
-                    </div>
-
-                    <!-- Universal Footer Signatures -->
-                    <div class="mt-16 flex justify-between px-8">
-                        <div class="text-center">
-                            <p class="text-xs text-gray-500 mb-16">Pihak Klien / Tenant</p>
-                            <p class="text-sm font-bold border-b border-gray-400 pb-1 w-32 mx-auto"></p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-xs text-gray-500 mb-16">Beuna System Specialist</p>
-                            <p class="text-sm font-bold border-b border-gray-400 pb-1">Dimas Santosa</p>
-                        </div>
-                    </div>
-
-                    <div class="absolute bottom-10 left-0 w-full text-center">
-                        <p class="text-[10px] text-gray-400 font-mono">Document verified via Beuna Automation Core</p>
-                    </div>
-                </div>
-            </main>
         </div>
     </div>
 
-    <!-- ================= JAVASCRIPT LOGIC ================= -->
-    <script>
-        // --- Core Data ---
-        let currentUserId = null;
-        let activeGeneratorType = 'INV'; 
+    <!-- ================= 3. MANAGERIAL COMMAND CENTER ================= -->
+    <div id="managerialView" class="hidden w-full h-full flex overflow-hidden">
+        
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="w-20 md:w-64 glass-panel border-r border-white/5 flex flex-col no-print z-20">
+            <div class="p-6 flex items-center gap-3 border-b border-white/5">
+                <img src="https://raw.githubusercontent.com/sunsetdansenja-arch/beuna-agency/main/beuna%20logo%20v2.png" alt="Logo" class="w-8 h-8">
+                <span class="font-bold tracking-widest hidden md:block text-lg">BEUNA</span>
+            </div>
+            <nav class="flex-1 p-4 space-y-2">
+                <button onclick="switchManagerialView('crm')" id="nav-crm" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-white/10 text-white transition-all">
+                    <i class="ph-fill ph-funnel text-xl"></i> <span class="hidden md:block">CRM Pipeline</span>
+                </button>
+                <button onclick="switchManagerialView('docHub')" id="nav-docs" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white/40 hover:bg-white/5 transition-all">
+                    <i class="ph-fill ph-files text-xl"></i> <span class="hidden md:block">Docs Generator</span>
+                </button>
+            </nav>
+            <div class="p-4 border-t border-white/5">
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold text-red-400 hover:bg-red-400/10 transition-all">
+                    <i class="ph-bold ph-power text-lg"></i> <span class="hidden md:block">Logout</span>
+                </button>
+            </div>
+        </aside>
 
-        const projects = [
-            { id: "p1", name: "Supply Chain System", client: "Pak Rusdi" },
-            { id: "p2", name: "Reflexology Dashboard (12 Br)", client: "Pak Sutarman" },
-            { id: "p3", name: "Fortuna Laundry Bot", client: "Fortuna Management" },
-            { id: "p4", name: "Jungle Slide BK Web", client: "Uncle Toti" },
-            { id: "p5", name: "Alaiiva Travel Platform", client: "Mbak Sri" }
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto bg-[#09090b] relative">
+            
+            <!-- 3A. CRM VIEW -->
+            <div id="view-crm" class="p-6 md:p-10 space-y-8 max-w-[1400px] mx-auto no-print">
+                <!-- Dashboard stats from your code... -->
+                <section>
+                    <div class="folder-tab"><i class="ph-bold ph-chart-pie-slice"></i> Progress</div>
+                    <div class="folder-content p-6 flex flex-wrap justify-between items-center gap-6">
+                        <div class="flex items-end gap-3">
+                            <span id="stat-conversion" class="text-4xl md:text-5xl font-black tracking-tighter">0%</span>
+                            <span class="text-green-400 font-bold mb-1 flex items-center gap-1 text-[10px] uppercase tracking-widest"><i class="ph-bold ph-trend-up"></i> Closing Rate</span>
+                        </div>
+                        <div class="flex gap-8 border-t md:border-t-0 border-white/10 pt-4 md:pt-0">
+                            <div><p class="text-white/40 text-[9px] uppercase font-black tracking-widest">Total Reach</p><p id="stat-reach" class="text-lg font-bold">0</p></div>
+                            <div><p class="text-white/40 text-[9px] uppercase font-black tracking-widest">Meeting / Nego</p><p id="stat-nego" class="text-lg font-bold text-yellow-400">0</p></div>
+                            <div><p class="text-white/40 text-[9px] uppercase font-black tracking-widest">Closing / Tenants</p><p id="stat-deal" class="text-lg font-bold text-green-400">0</p></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- NEW/REACH -->
+                    <div>
+                        <div class="folder-tab text-indigo-300 border-indigo-500/20 bg-indigo-500/5">Fresh Leads</div>
+                        <div class="folder-content folder-content-grid p-4 border-indigo-500/20 bg-indigo-500/5 min-h-[400px] flex flex-col gap-3" id="col-pool"></div>
+                    </div>
+                    <!-- NEGO -->
+                    <div>
+                        <div class="folder-tab text-yellow-300 border-yellow-500/20 bg-yellow-500/5">Meeting / Nego</div>
+                        <div class="folder-content folder-content-grid p-4 border-yellow-500/20 bg-yellow-500/5 min-h-[400px] flex flex-col gap-3" id="col-nego"></div>
+                    </div>
+                    <!-- DEAL -->
+                    <div>
+                        <div class="folder-tab text-green-300 border-green-500/20 bg-green-500/5">Closing</div>
+                        <div class="folder-content folder-content-grid p-4 border-green-500/20 bg-green-500/5 min-h-[400px] flex flex-col gap-3" id="col-deal"></div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 3B. DOCS HUB VIEW -->
+            <div id="view-docHub" class="hidden p-6 md:p-10 space-y-8 max-w-[1200px] mx-auto no-print">
+                <header>
+                    <h2 class="text-3xl font-black tracking-tight">Document Center</h2>
+                    <p class="text-sm text-white/40 mt-1">Pilih jenis dokumen yang ingin di-generate.</p>
+                </header>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div onclick="openGenerator('OFF')" class="folder-content p-6 cursor-pointer hover:bg-white/5 transition-all border-t-2 border-t-gray-400">
+                        <i class="ph-fill ph-envelope-open text-3xl mb-4 text-gray-400"></i>
+                        <h4 class="font-bold text-lg">Offer Letter</h4>
+                        <p class="text-xs text-white/40 mt-2">Penawaran project baru.</p>
+                    </div>
+                    <div onclick="openGenerator('INV')" class="folder-content p-6 cursor-pointer hover:bg-white/5 transition-all border-t-2 border-t-red-600">
+                        <i class="ph-fill ph-receipt text-3xl mb-4 text-red-500"></i>
+                        <h4 class="font-bold text-lg">Invoice</h4>
+                        <p class="text-xs text-white/40 mt-2">Tagihan DP / Bulanan.</p>
+                    </div>
+                    <div onclick="openGenerator('BAP')" class="folder-content p-6 cursor-pointer hover:bg-white/5 transition-all border-t-2 border-t-blue-500">
+                        <i class="ph-fill ph-check-square-offset text-3xl mb-4 text-blue-500"></i>
+                        <h4 class="font-bold text-lg">BAP</h4>
+                        <p class="text-xs text-white/40 mt-2">Tarik log Dev otomatis.</p>
+                    </div>
+                    <div onclick="openGenerator('BAST')" class="folder-content p-6 cursor-pointer hover:bg-white/5 transition-all border-t-2 border-t-green-500">
+                        <i class="ph-fill ph-handshake text-3xl mb-4 text-green-500"></i>
+                        <h4 class="font-bold text-lg">BAST</h4>
+                        <p class="text-xs text-white/40 mt-2">Serah terima project.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3C. DOCS GENERATOR (SPLIT SCREEN) -->
+            <div id="view-docGen" class="hidden h-full flex flex-col md:flex-row">
+                
+                <!-- Left Control Panel -->
+                <div class="w-full md:w-80 glass-panel border-r border-white/5 p-6 flex flex-col no-print bg-[#09090b]/80 z-10">
+                    <button onclick="switchManagerialView('docHub')" class="text-xs text-white/40 hover:text-white flex items-center gap-1 mb-6">
+                        <i class="ph-bold ph-arrow-left"></i> Kembali ke Hub
+                    </button>
+                    
+                    <h3 class="text-lg font-bold mb-6" id="genTitle">Generate INV</h3>
+
+                    <div class="space-y-4 flex-1">
+                        <div>
+                            <label class="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Pilih Client / Project</label>
+                            <select id="genProject" onchange="updateA4Preview()" class="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none"></select>
+                        </div>
+                        
+                        <!-- Dynamic Forms -->
+                        <div id="formINV" class="space-y-4 hidden">
+                            <div>
+                                <label class="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Deskripsi</label>
+                                <input type="text" id="invDesc" value="Tagihan Layanan" oninput="updateA4Preview()" class="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Nominal (Rp)</label>
+                                <input type="number" id="invAmount" value="2500000" oninput="updateA4Preview()" class="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div id="formBAP" class="hidden bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl text-xs text-blue-200">
+                            Mode BAP: Log ditarik otomatis dari input Developer.
+                        </div>
+                    </div>
+
+                    <button onclick="window.print()" class="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-all text-sm mt-6 flex items-center justify-center gap-2">
+                        <i class="ph-bold ph-printer"></i> Cetak PDF A4
+                    </button>
+                </div>
+
+                <!-- Right A4 Preview Panel -->
+                <div class="flex-1 overflow-y-auto p-8 bg-gray-900/50 print:bg-white print:p-0">
+                    <div class="a4-paper flex flex-col text-sm print-exact">
+                        
+                        <!-- Header A4 -->
+                        <div class="flex justify-between items-start border-b-2 border-gray-900 pb-6 mb-6">
+                            <div>
+                                <h1 class="text-4xl font-extrabold tracking-tighter text-gray-900">BEUNA<span class="text-red-700">.</span></h1>
+                                <p class="text-xs text-gray-500 mt-1">System Analyst & Automation Specialist</p>
+                            </div>
+                            <div class="text-right">
+                                <h2 class="text-2xl font-bold text-gray-400 uppercase tracking-widest" id="a4Type">INVOICE</h2>
+                                <p class="text-xs text-gray-600 mt-1 font-mono" id="a4DocNum">000/BEUNA/2026</p>
+                                <p class="text-xs text-gray-600 mt-1" id="a4Date">Tanggal: -</p>
+                            </div>
+                        </div>
+
+                        <!-- Client Info -->
+                        <div class="mb-8">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Ditujukan Kepada:</p>
+                            <p class="text-lg font-bold text-gray-900" id="a4ClientName">Nama Klien</p>
+                            <p class="text-sm text-gray-600" id="a4ProjectName">Project</p>
+                        </div>
+
+                        <!-- Dynamic Content Layouts -->
+                        <div class="flex-1">
+                            
+                            <!-- Invoice Template -->
+                            <div id="layoutINV" class="w-full hidden">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="border-b-2 border-gray-800">
+                                            <th class="py-3 font-bold text-xs uppercase text-gray-500">Deskripsi Layanan</th>
+                                            <th class="py-3 font-bold text-xs uppercase text-gray-500 text-right">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="border-b border-gray-200">
+                                            <td class="py-4 text-sm" id="a4InvDesc">Layanan</td>
+                                            <td class="py-4 text-sm font-mono text-right font-bold" id="a4InvAmount">Rp 0</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div class="flex justify-end mt-6">
+                                    <div class="w-1/2 bg-gray-50 p-4 border border-gray-200">
+                                        <p class="text-[10px] text-gray-500 mb-1 uppercase font-bold">Informasi Pembayaran:</p>
+                                        <p class="text-sm font-bold">BCA - 1234567890</p>
+                                        <p class="text-xs text-gray-600">a.n Dimas Santosa (Beuna Agency)</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BAP Template -->
+                            <div id="layoutBAP" class="w-full hidden">
+                                <p class="text-sm mb-4 text-gray-700">Rincian log aktivitas teknis untuk periode ini:</p>
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="border-b-2 border-gray-800">
+                                            <th class="py-2 text-xs uppercase text-gray-500 w-1/5">Tanggal</th>
+                                            <th class="py-2 text-xs uppercase text-gray-500 w-1/5">Kategori</th>
+                                            <th class="py-2 text-xs uppercase text-gray-500 w-2/5">Detail</th>
+                                            <th class="py-2 text-xs uppercase text-gray-500 w-1/5 text-right">PIC</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="a4BapLogs"></tbody>
+                                </table>
+                                <div id="a4BapEmpty" class="hidden mt-4 text-xs text-red-600 italic">Belum ada log dari Developer.</div>
+                            </div>
+                            
+                            <!-- Other Docs -->
+                            <div id="layoutOTHER" class="hidden text-center pt-20 text-gray-400 text-sm">
+                                [Template Dokumen Kontrak / Penawaran akan ter-generate di sini]
+                            </div>
+
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="mt-20 flex justify-between px-8">
+                            <div class="text-center">
+                                <p class="text-xs text-gray-500 mb-16">Pihak Klien</p>
+                                <p class="text-sm font-bold border-b border-gray-400 pb-1 w-32 mx-auto"></p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs text-gray-500 mb-16">Beuna System</p>
+                                <p class="text-sm font-bold border-b border-gray-400 pb-1">Dimas Santosa</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ================= JAVASCRIPT (MOCK LOGIC) ================= -->
+    <script>
+        // --- 1. MOCK DATA STATE ---
+        let currentRole = null;
+        let activeDocType = 'INV';
+        
+        // Leads for CRM
+        let leads = [
+            { id: "L1", name: "PT Sejahtera", status: "new" },
+            { id: "L2", name: "Klinik Gigi ABC", status: "nego" },
+            { id: "L3", name: "Reflexology Pak Sutarman", status: "deal" },
+            { id: "L4", name: "Laundry Fortuna", status: "deal" }
         ];
 
-        // Init LocalStorage DB
-        let dbLogs = JSON.parse(localStorage.getItem('beunaLogs'));
-        if (!dbLogs) {
-            dbLogs = [
-                { id: 1, projectId: "p2", category: "Bug Fix", detail: "Fix UI Dashboard Cabang 3", devId: "dev_system", date: "07/04/2026" },
-                { id: 2, projectId: "p2", category: "System Update", detail: "Update webhook node n8n", devId: "dev_system", date: "08/04/2026" }
-            ];
-            localStorage.setItem('beunaLogs', JSON.stringify(dbLogs));
+        // Developer Logs
+        let devLogs = [
+            { id: 1, projId: "L3", category: "Bug Fix", detail: "Fix UI Dashboard", pic: "DEV_01", date: "07/04/2026" }
+        ];
+
+        // --- 2. ROUTING LOGIC ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            if(u === 'admin') { currentRole = 'admin'; showAppView('managerialView'); initManagerial(); }
+            else if(u === 'dev') { currentRole = 'dev'; showAppView('devView'); initDev(); }
+            else alert("Gunakan admin/123 atau dev/123");
         }
 
-        // --- Navigation Controller ---
-        function showView(viewId) {
-            ['loginView', 'devView', 'managerDashboardView', 'managerGeneratorView'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
-            });
+        function logout() { currentRole = null; showAppView('loginView'); }
+
+        function showAppView(viewId) {
+            ['loginView', 'devView', 'managerialView'].forEach(id => document.getElementById(id).classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
         }
 
-        // --- Login Logic ---
-        function handleLogin(e) {
+        // --- 3. DEVELOPER LOGIC ---
+        function initDev() {
+            // Populate Dropdown only with Deals (Tenants)
+            const activeProjects = leads.filter(l => l.status === 'deal');
+            document.getElementById('devProject').innerHTML = activeProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            renderDevLogs();
+        }
+
+        function submitDevLog(e) {
             e.preventDefault();
-            const u = document.getElementById('username').value.trim();
-            const p = document.getElementById('password').value.trim();
-
-            if (u === 'admin' && p === '123') {
-                currentUserId = 'admin_dimas';
-                showView('managerDashboardView');
-                populateProjectSelects();
-            } else if (u === 'dev' && p === '123') {
-                currentUserId = 'dev_01_backend'; // Sistem otomatis rekam ID dev
-                document.getElementById('activeDevName').innerText = u.toUpperCase();
-                showView('devView');
-                populateProjectSelects();
-                renderDevLogs();
-            } else {
-                alert("Kredensial salah.");
-            }
-        }
-
-        function logout() {
-            currentUserId = null;
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            showView('loginView');
-        }
-
-        function populateProjectSelects() {
-            const options = projects.map(p => `<option value="${p.id}">${p.client} - ${p.name}</option>`).join('');
-            document.getElementById('devProject').innerHTML = `<option value="">Pilih Project...</option>` + options;
-            document.getElementById('docProject').innerHTML = options;
-        }
-
-        // --- Developer Specific Logic ---
-        function submitLog(e) {
-            e.preventDefault();
-            const projectId = document.getElementById('devProject').value;
-            const category = document.getElementById('devCategory').value;
-            const detail = document.getElementById('devDetail').value;
-
-            // Memasukkan Developer ID secara diam-diam (Auto-Track)
-            const newLog = {
-                id: Date.now(),
-                projectId,
-                category,
-                detail,
-                devId: currentUserId, 
-                date: new Date().toLocaleDateString('id-ID')
-            };
-
-            dbLogs.unshift(newLog);
-            localStorage.setItem('beunaLogs', JSON.stringify(dbLogs));
-            
+            devLogs.unshift({
+                id: Date.now(), projId: document.getElementById('devProject').value,
+                category: document.getElementById('devCategory').value,
+                detail: document.getElementById('devDetail').value,
+                pic: "DEV_01", date: new Date().toLocaleDateString('id-ID')
+            });
             document.getElementById('devDetail').value = '';
             renderDevLogs();
-            alert("Log tersimpan! ID Anda (" + currentUserId + ") telah dicatat sistem.");
         }
 
         function renderDevLogs() {
-            const list = document.getElementById('devLogList');
-            list.innerHTML = dbLogs.map(log => {
-                const proj = projects.find(p => p.id === log.projectId);
-                return `
-                    <div class="p-3 bg-white/50 border border-white rounded-xl shadow-sm text-sm">
-                        <div class="flex justify-between mb-1">
-                            <span class="font-bold text-xs text-gray-800">${proj ? proj.name : '?'}</span>
-                            <span class="text-[10px] bg-gray-200 px-2 py-0.5 rounded">${log.category}</span>
-                        </div>
-                        <p class="text-xs text-gray-600">${log.detail}</p>
-                    </div>`;
+            document.getElementById('devLogList').innerHTML = devLogs.map(log => {
+                const p = leads.find(l => l.id === log.projId);
+                return `<div class="bg-white/5 border border-white/10 p-3 rounded-xl text-sm">
+                    <div class="flex justify-between text-xs text-white/40 mb-1">
+                        <span>${p ? p.name : '?'}</span><span class="font-mono">${log.pic}</span>
+                    </div>
+                    <p>${log.detail}</p>
+                </div>`;
             }).join('');
         }
 
-        // --- Managerial Generator Logic ---
-        function openGenerator(docType) {
-            activeGeneratorType = docType;
-            showView('managerGeneratorView');
-            
-            // Set Header & Date
-            const types = { 'INV': 'INVOICE', 'BAP': 'BERITA ACARA', 'OFF': 'OFFER LETTER', 'BAST': 'BERITA ACARA S.T' };
-            document.getElementById('activeDocLabel').innerText = `MODE: ${types[docType]}`;
-            document.getElementById('previewTitle').innerText = types[docType];
-            document.getElementById('previewDate').innerText = "Tanggal: " + new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
-            
-            // Toggle Sidebar Form Visibilities
-            document.getElementById('formINV').classList.toggle('hidden', docType !== 'INV');
-            document.getElementById('formBAP').classList.toggle('hidden', docType !== 'BAP');
-            document.getElementById('formOTHER').classList.toggle('hidden', (docType === 'INV' || docType === 'BAP'));
-
-            // Toggle A4 Layout Visibilities
-            document.getElementById('layoutINV').classList.toggle('hidden', docType !== 'INV');
-            document.getElementById('layoutBAP').classList.toggle('hidden', docType !== 'BAP');
-            document.getElementById('layoutOTHER').classList.toggle('hidden', (docType === 'INV' || docType === 'BAP'));
-
-            updatePreview();
+        // --- 4. MANAGERIAL LOGIC (CRM & BRIDGE) ---
+        function initManagerial() {
+            switchManagerialView('crm');
         }
 
-        function backToDashboard() {
-            showView('managerDashboardView');
+        function switchManagerialView(subView) {
+            ['view-crm', 'view-docHub', 'view-docGen'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById(`view-${subView}`).classList.remove('hidden');
+            
+            // Toggle Active State on Sidebar
+            document.getElementById('nav-crm').className = subView === 'crm' ? "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-white/10 text-white transition-all" : "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white/40 hover:bg-white/5 transition-all";
+            document.getElementById('nav-docs').className = subView !== 'crm' ? "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-white/10 text-white transition-all" : "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white/40 hover:bg-white/5 transition-all";
+
+            if(subView === 'crm') renderCRM();
         }
 
-        function updatePreview() {
-            const docType = activeGeneratorType;
-            const projectId = document.getElementById('docProject').value;
-            const proj = projects.find(p => p.id === projectId);
-
-            document.getElementById('previewDocNum').innerText = `${Math.floor(Math.random()*90+10)}/BEUNA/${docType}/26`;
+        function renderCRM() {
+            const pools = { 'new': 'col-pool', 'nego': 'col-nego', 'deal': 'col-deal' };
+            Object.values(pools).forEach(id => document.getElementById(id).innerHTML = '');
             
-            if (proj) {
-                document.getElementById('previewClient').innerText = proj.client;
-                document.getElementById('previewProjectName').innerText = "Project: " + proj.name;
+            let stats = { r:0, n:0, d:0 };
+
+            leads.forEach(l => {
+                const isNego = l.status === 'nego';
+                const isDeal = l.status === 'deal';
+                
+                if(isNego) { stats.r++; stats.n++; }
+                if(isDeal) { stats.r++; stats.d++; }
+
+                // THE BRIDGE BUTTONS (Connect CRM to Docs)
+                let actionBtn = '';
+                if(isNego) actionBtn = `<button onclick="jumpToDocs('OFF', '${l.id}')" class="w-full mt-3 bg-indigo-500/20 text-indigo-300 text-[10px] font-bold py-2 rounded border border-indigo-500/30 hover:bg-indigo-500/40 transition-all">+ Buat Offer</button>`;
+                if(isDeal) actionBtn = `<button onclick="jumpToDocs('INV', '${l.id}')" class="w-full mt-3 bg-green-500/20 text-green-300 text-[10px] font-bold py-2 rounded border border-green-500/30 hover:bg-green-500/40 transition-all">+ Generate Tagihan</button>`;
+
+                const card = `<div class="glass-card p-4 rounded-xl flex flex-col gap-2">
+                    <h4 class="font-bold text-sm text-white">${l.name}</h4>
+                    <span class="text-[10px] text-white/40">${l.status.toUpperCase()}</span>
+                    ${actionBtn}
+                </div>`;
+                document.getElementById(pools[l.status]).innerHTML += card;
+            });
+
+            document.getElementById('stat-reach').innerText = stats.r;
+            document.getElementById('stat-nego').innerText = stats.n;
+            document.getElementById('stat-deal').innerText = stats.d;
+            document.getElementById('stat-conversion').innerText = stats.r > 0 ? Math.round((stats.d/stats.r)*100)+'%' : '0%';
+        }
+
+        // --- 5. THE BRIDGE (CRM -> DOCS) ---
+        function jumpToDocs(docType, leadId) {
+            openGenerator(docType);
+            document.getElementById('genProject').value = leadId;
+            updateA4Preview();
+        }
+
+        // --- 6. GENERATOR LOGIC ---
+        function openGenerator(type) {
+            activeDocType = type;
+            switchManagerialView('docGen');
+            
+            // Populate Project Dropdown (All leads for OFF, only Deals for BAP/INV)
+            const targetLeads = type === 'OFF' ? leads : leads.filter(l => l.status === 'deal');
+            document.getElementById('genProject').innerHTML = targetLeads.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+            
+            document.getElementById('genTitle').innerText = "Generate " + type;
+            document.getElementById('formINV').classList.toggle('hidden', type !== 'INV');
+            document.getElementById('formBAP').classList.toggle('hidden', type !== 'BAP');
+            
+            document.getElementById('layoutINV').classList.toggle('hidden', type !== 'INV');
+            document.getElementById('layoutBAP').classList.toggle('hidden', type !== 'BAP');
+            document.getElementById('layoutOTHER').classList.toggle('hidden', type === 'INV' || type === 'BAP');
+            
+            document.getElementById('a4Date').innerText = "Tanggal: " + new Date().toLocaleDateString('id-ID');
+            updateA4Preview();
+        }
+
+        function updateA4Preview() {
+            const leadId = document.getElementById('genProject').value;
+            const lead = leads.find(l => l.id === leadId);
+            
+            document.getElementById('a4Type').innerText = activeDocType;
+            document.getElementById('a4DocNum').innerText = `00${Math.floor(Math.random()*9)}/BN/${activeDocType}/26`;
+            
+            if(lead) {
+                document.getElementById('a4ClientName').innerText = lead.name;
+                document.getElementById('a4ProjectName').innerText = "Project Integration Phase";
             }
 
-            if (docType === 'INV') {
-                const desc = document.getElementById('invDesc').value;
-                const amt = parseFloat(document.getElementById('invAmount').value) || 0;
-                document.getElementById('renderInvDesc').innerText = desc;
-                document.getElementById('renderInvAmount').innerText = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amt);
-            } 
-            else if (docType === 'BAP') {
-                const logs = dbLogs.filter(l => l.projectId === projectId);
-                const tbody = document.getElementById('renderBapLogs');
-                const empty = document.getElementById('bapEmptyState');
-
-                if (logs.length > 0) {
-                    empty.classList.add('hidden');
-                    // Render logs to table, automatically showing Dev ID for traceability
-                    tbody.innerHTML = logs.map(l => `
-                        <tr class="border-b border-gray-200 print:border-gray-300">
-                            <td class="py-3 px-2 text-xs align-top">${l.date}</td>
-                            <td class="py-3 px-2 text-xs align-top font-medium text-gray-700">${l.category}</td>
-                            <td class="py-3 px-2 text-xs align-top text-gray-600">${l.detail}</td>
-                            <td class="py-3 px-2 text-[10px] align-top text-right text-gray-400 font-mono">${l.devId}</td>
+            if(activeDocType === 'INV') {
+                document.getElementById('a4InvDesc').innerText = document.getElementById('invDesc').value;
+                document.getElementById('a4InvAmount').innerText = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(document.getElementById('invAmount').value);
+            } else if(activeDocType === 'BAP') {
+                const targetLogs = devLogs.filter(l => l.projId === leadId);
+                const tbody = document.getElementById('a4BapLogs');
+                if(targetLogs.length > 0) {
+                    document.getElementById('a4BapEmpty').classList.add('hidden');
+                    tbody.innerHTML = targetLogs.map(l => `
+                        <tr class="border-b border-gray-200">
+                            <td class="py-2 text-xs">${l.date}</td><td class="py-2 text-xs">${l.category}</td>
+                            <td class="py-2 text-xs text-gray-600">${l.detail}</td><td class="py-2 text-[10px] text-right font-mono">${l.pic}</td>
                         </tr>
                     `).join('');
                 } else {
                     tbody.innerHTML = '';
-                    empty.classList.remove('hidden');
+                    document.getElementById('a4BapEmpty').classList.remove('hidden');
                 }
             }
         }
