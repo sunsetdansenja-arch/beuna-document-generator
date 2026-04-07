@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beuna System - Docs Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --beuna-maroon: #800000;
+            --beuna-red: #A52A2A;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f7;
+            /* Subtle modern background gradient */
+            background-image: radial-gradient(at 0% 0%, hsla(353,100%,94%,1) 0, transparent 50%), 
+                              radial-gradient(at 100% 100%, hsla(0,0%,96%,1) 0, transparent 50%);
+            background-attachment: fixed;
+            color: #1d1d1f;
+            margin: 0;
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* Smooth Transitions */
+        .page-transition {
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        
+        .hidden-page {
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            transform: translateY(10px);
+            z-index: -1;
+        }
+
+        .active-page {
+            opacity: 1;
+            pointer-events: auto;
+            position: relative;
+            transform: translateY(0);
+            z-index: 10;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Custom Scrollbar for inner areas */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #86868b; }
+
+        /* Print Specific Styles */
+        @page { size: A4; margin: 0; }
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area {
+                position: absolute;
+                left: 0; top: 0;
+                width: 210mm; /* Exact A4 width */
+                background: white !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .no-print { display: none !important; }
+        }
+
+        /* PDF Preview Area A4 constraint */
+        .a4-wrapper {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            padding: 20mm;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            transform-origin: top center;
+        }
+
+        /* Custom Input Styling */
+        .input-beuna {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e5ea;
+            background: rgba(255,255,255,0.8);
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .input-beuna:focus {
+            outline: none;
+            border-color: var(--beuna-maroon);
+            box-shadow: 0 0 0 3px rgba(128, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================== -->
+    <!-- 1. LOGIN PAGE -->
+    <!-- ============================================== -->
+    <div id="page-login" class="active-page min-h-screen flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-md rounded-3xl p-10 text-center relative overflow-hidden">
+            <!-- Decorative circle -->
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-red-100 rounded-full blur-2xl opacity-60"></div>
+            
+            <div class="w-16 h-16 bg-black rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-xl">
+                <span class="text-white text-2xl font-bold tracking-tighter">B</span>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight mb-2">Beuna System</h1>
+            <p class="text-sm text-gray-500 mb-8">Internal Docs & Maintenance Hub</p>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1 uppercase tracking-wider">Spesialis ID</label>
+                    <input type="text" value="dimas.beuna" class="input-beuna" placeholder="Enter your ID">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1 uppercase tracking-wider">Passcode</label>
+                    <input type="password" value="********" class="input-beuna" placeholder="Enter passcode">
+                </div>
+                <button onclick="navigate('page-dashboard')" class="w-full mt-6 bg-black text-white font-medium py-3 rounded-xl hover:bg-gray-800 transition-colors flex justify-center items-center">
+                    Masuk Workspace
+                    <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- APP CONTAINER (Navbar + Content) -->
+    <!-- ============================================== -->
+    <div id="app-container" class="hidden-page h-screen flex flex-col">
+        
+        <!-- TOP NAVIGATION -->
+        <nav class="glass-panel sticky top-0 z-50 border-b border-white/40 px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="navigate('page-dashboard')">
+                <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">B</span>
+                </div>
+                <span class="font-semibold tracking-tight">Beuna Docs</span>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <button onclick="navigate('page-dashboard')" class="text-sm font-medium text-gray-600 hover:text-black transition-colors">Dashboard</button>
+                <div class="h-4 w-px bg-gray-300"></div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                        <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Dimas" alt="Avatar">
+                    </div>
+                    <span class="text-sm font-semibold">Dimas</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+                </div>
+                <button onclick="navigate('page-login')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors" title="Logout">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- ============================================== -->
+        <!-- 2. DASHBOARD PAGE -->
+        <!-- ============================================== -->
+        <main id="page-dashboard" class="page-transition flex-1 p-8 max-w-6xl mx-auto w-full">
+            <div class="mb-10">
+                <h1 class="text-3xl font-bold tracking-tight mb-2">Selamat Datang, Dimas</h1>
+                <p class="text-gray-500">Pilih jenis dokumen yang ingin Anda generate hari ini.</p>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div class="glass-panel rounded-2xl p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Total Klien</p>
+                        <p class="text-2xl font-bold">12 <span class="text-sm font-normal text-green-500">+2 bulan ini</span></p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-2xl p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Draft BAP (Siap Cetak)</p>
+                        <p class="text-2xl font-bold">4 <span class="text-sm font-normal text-gray-400">Menunggu Review</span></p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center">
+                        <i data-lucide="file-check" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-2xl p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Invoice Bulan Ini</p>
+                        <p class="text-2xl font-bold text-[#800000]">Rp 45.5M</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-red-50 text-[#800000] flex items-center justify-center">
+                        <i data-lucide="receipt" class="w-6 h-6"></i>
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="text-lg font-bold mb-4">Pilih Jenis Dokumen</h2>
+            
+            <!-- Document Selector Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Offer Letter Card -->
+                <div onclick="openGenerator('offer')" class="glass-panel rounded-2xl p-6 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all border-2 border-transparent hover:border-[#800000]/20 group">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-[#800000]/10 text-gray-600 group-hover:text-[#800000] flex items-center justify-center transition-colors">
+                            <i data-lucide="mail" class="w-6 h-6"></i>
+                        </div>
+                        <span class="text-xs font-bold px-2 py-1 bg-gray-100 rounded text-gray-500 uppercase">Pre-Project</span>
+                    </div>
+                    <h3 class="font-bold text-xl mb-1">Offer Letter & SoW</h3>
+                    <p class="text-sm text-gray-500">Penawaran proyek baru dengan rincian teknis scope of work.</p>
+                </div>
+
+                <!-- Invoice Card -->
+                <div onclick="openGenerator('invoice')" class="glass-panel rounded-2xl p-6 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all border-2 border-transparent hover:border-[#800000]/20 group">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-[#800000]/10 text-gray-600 group-hover:text-[#800000] flex items-center justify-center transition-colors">
+                            <i data-lucide="receipt" class="w-6 h-6"></i>
+                        </div>
+                        <span class="text-xs font-bold px-2 py-1 bg-gray-100 rounded text-gray-500 uppercase">Billing</span>
+                    </div>
+                    <h3 class="font-bold text-xl mb-1">Invoice Tagihan</h3>
+                    <p class="text-sm text-gray-500">Tagihan DP Proyek, Pelunasan, atau Maintenance Bulanan.</p>
+                </div>
+
+                <!-- BAP Card -->
+                <div onclick="openGenerator('bap')" class="glass-panel rounded-2xl p-6 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all border-2 border-transparent hover:border-[#800000]/20 group">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-[#800000]/10 text-gray-600 group-hover:text-[#800000] flex items-center justify-center transition-colors">
+                            <i data-lucide="clipboard-check" class="w-6 h-6"></i>
+                        </div>
+                        <span class="text-xs font-bold px-2 py-1 bg-green-50 text-green-600 rounded uppercase">Maintenance</span>
+                    </div>
+                    <h3 class="font-bold text-xl mb-1">BAP (Pemeliharaan)</h3>
+                    <p class="text-sm text-gray-500">Berita acara laporan aktivitas maintenance bulanan dari developer.</p>
+                </div>
+
+                <!-- BAST Card -->
+                <div onclick="openGenerator('bast')" class="glass-panel rounded-2xl p-6 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all border-2 border-transparent hover:border-[#800000]/20 group">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-[#800000]/10 text-gray-600 group-hover:text-[#800000] flex items-center justify-center transition-colors">
+                            <i data-lucide="handshake" class="w-6 h-6"></i>
+                        </div>
+                        <span class="text-xs font-bold px-2 py-1 bg-gray-100 rounded text-gray-500 uppercase">Closing</span>
+                    </div>
+                    <h3 class="font-bold text-xl mb-1">BAST (Serah Terima)</h3>
+                    <p class="text-sm text-gray-500">Berita acara tanda selesainya proyek dan penyerahan ke klien.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- ============================================== -->
+        <!-- 3. WORKSPACE / GENERATOR PAGE (Split Screen) -->
+        <!-- ============================================== -->
+        <main id="page-generator" class="hidden-page flex-1 overflow-hidden flex flex-col md:flex-row">
+            
+            <!-- LEFT PANEL: Dynamic Form -->
+            <div class="w-full md:w-[400px] lg:w-[500px] glass-panel border-r border-white/50 flex flex-col h-full z-10 overflow-y-auto relative shadow-xl">
+                
+                <div class="p-6 border-b border-gray-200 sticky top-0 bg-white/80 backdrop-blur-md z-20 flex justify-between items-center">
+                    <div>
+                        <button onclick="navigate('page-dashboard')" class="text-sm text-gray-500 hover:text-black mb-2 flex items-center font-medium">
+                            <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Kembali
+                        </button>
+                        <h2 class="text-xl font-bold" id="form-title">Buat Dokumen</h2>
+                    </div>
+                    <span id="form-badge" class="px-3 py-1 bg-gray-100 rounded-full text-xs font-bold uppercase tracking-wider text-gray-600">NEW</span>
+                </div>
+
+                <div class="p-6 flex-1 space-y-6" id="dynamic-form-area">
+                    <!-- Form akan dirender via JS berdasarkan pilihan -->
+                </div>
+
+                <div class="p-6 border-t border-gray-200 bg-gray-50/50 sticky bottom-0 z-20">
+                    <button onclick="updatePreview()" class="w-full bg-black text-white font-medium py-3 rounded-xl hover:bg-gray-800 transition-colors flex justify-center items-center shadow-lg">
+                        <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> Update Preview
+                    </button>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Live PDF Preview Area -->
+            <div class="flex-1 bg-gray-200/50 overflow-y-auto p-4 md:p-10 flex flex-col items-center relative">
+                
+                <div class="no-print absolute top-6 right-10 z-20 flex space-x-3">
+                    <div class="glass-panel px-4 py-2 rounded-full text-sm font-semibold text-gray-600 flex items-center">
+                        <i data-lucide="eye" class="w-4 h-4 mr-2"></i> Live Preview A4
+                    </div>
+                    <button onclick="window.print()" class="bg-[#800000] text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-red-800 transition-all flex items-center shadow-lg shadow-red-900/20">
+                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Cetak / Simpan PDF
+                    </button>
+                </div>
+
+                <!-- THE A4 CANVAS -->
+                <!-- Transform scale agar muat di layar kecil, tapi saat print ukurannya tetap asli A4 -->
+                <div class="transform scale-[0.6] sm:scale-[0.8] lg:scale-[0.9] xl:scale-100 origin-top mb-20 transition-transform">
+                    <div id="print-area" class="a4-wrapper relative">
+                        <!-- Konten Template PDF Master (Disuntik via JS) -->
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // --- NAVIGATION LOGIC ---
+        function navigate(pageId) {
+            // Sembunyikan semua halaman
+            document.querySelectorAll('.active-page').forEach(el => {
+                el.classList.remove('active-page');
+                el.classList.add('hidden-page');
+            });
+            
+            // Tampilkan halaman target
+            const target = document.getElementById(pageId);
+            if(target) {
+                target.classList.remove('hidden-page');
+                target.classList.add('active-page');
+            }
+
+            // Atur container utama jika bukan login
+            if (pageId !== 'page-login') {
+                document.getElementById('app-container').classList.remove('hidden-page');
+                document.getElementById('app-container').classList.add('active-page');
+            } else {
+                document.getElementById('app-container').classList.add('hidden-page');
+                document.getElementById('app-container').classList.remove('active-page');
+            }
+        }
+
+        // --- GENERATOR LOGIC ---
+        let currentDocType = '';
+
+        const dummyClients = [
+            { id: 'C01', name: 'PT Digital Sejahtera', address: 'Jl. Sudirman No. 45, Jakarta' },
+            { id: 'C02', name: 'Klinik Reflexology Sehat', address: 'Ruko Alam Sutera Blok A1, Tangerang' },
+            { id: 'C03', name: 'Coffee Shop Indie', address: 'Jl. Senopati, Jakarta Selatan' }
+        ];
+
+        function openGenerator(type) {
+            currentDocType = type;
+            navigate('page-generator');
+            
+            const titles = {
+                'offer': 'Offer Letter Baru',
+                'invoice': 'Buat Invoice',
+                'bap': 'Generate BAP',
+                'bast': 'Buat BAST'
+            };
+            
+            document.getElementById('form-title').innerText = titles[type];
+            document.getElementById('form-badge').innerText = type;
+            
+            renderForm(type);
+            updatePreview(); // Initial render
+        }
+
+        // Render Dynamic Form Elements
+        function renderForm(type) {
+            const formArea = document.getElementById('dynamic-form-area');
+            let html = '';
+
+            // Common Fields (Client Info)
+            html += `
+                <div class="space-y-4 bg-white/50 p-4 rounded-xl border border-gray-100">
+                    <h3 class="font-bold text-sm text-gray-800 uppercase tracking-widest border-b pb-2 mb-3">Data Klien</h3>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1">Pilih Klien</label>
+                        <select id="input_klien" class="input-beuna font-medium" onchange="fillClientData()">
+                            <option value="">-- Pilih dari Database --</option>
+                            ${dummyClients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1">Alamat (Otomatis)</label>
+                        <textarea id="input_alamat" class="input-beuna text-xs text-gray-500" rows="2" placeholder="Alamat akan terisi otomatis..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1">Nama Proyek</label>
+                        <input type="text" id="input_proyek" class="input-beuna" placeholder="Misal: Automasi HR n8n">
+                    </div>
+                </div>
+            `;
+
+            // Specific Fields based on Type
+            if (type === 'invoice') {
+                const today = new Date().toISOString().split('T')[0];
+                html += `
+                    <div class="space-y-4 bg-white/50 p-4 rounded-xl border border-gray-100">
+                        <h3 class="font-bold text-sm text-[#800000] uppercase tracking-widest border-b pb-2 mb-3">Detail Tagihan</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1">Tanggal Terbit</label>
+                                <input type="date" id="input_tgl_terbit" class="input-beuna text-sm" value="${today}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1">Jatuh Tempo</label>
+                                <input type="date" id="input_tgl_tempo" class="input-beuna text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1">Jenis Pembayaran</label>
+                            <select id="input_termin" class="input-beuna text-sm">
+                                <option value="DP 50%">Down Payment (DP) 50%</option>
+                                <option value="Pelunasan 50%">Pelunasan (Final) 50%</option>
+                                <option value="Maintenance Bulanan">Maintenance Bulanan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1">Deskripsi Tagihan</label>
+                            <input type="text" id="input_desc_1" class="input-beuna mb-2" placeholder="Item 1..." value="Pembuatan Bot WhatsApp n8n">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1">Subtotal (Rp)</label>
+                            <input type="text" id="input_harga_1" class="input-beuna font-bold text-[#800000]" placeholder="15.000.000" value="15.000.000">
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'bap') {
+                const currentMonth = new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+                html += `
+                    <div class="space-y-4 bg-white/50 p-4 rounded-xl border border-gray-100">
+                        <h3 class="font-bold text-sm text-green-700 uppercase tracking-widest border-b pb-2 mb-3">Log Maintenance</h3>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1">Periode BAP</label>
+                            <input type="text" id="input_periode" class="input-beuna font-bold" value="${currentMonth}">
+                        </div>
+                        <div class="p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-start space-x-3">
+                            <i data-lucide="info" class="w-5 h-5 text-blue-500 mt-0.5"></i>
+                            <p class="text-xs text-blue-700 leading-relaxed">
+                                Tip: Di sistem nyata n8n nanti, Anda cukup pilih bulan, dan data aktivitas developer akan tertarik otomatis dari tabel 'maintenance_logs'.
+                            </p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1">Aktivitas 1</label>
+                            <input type="text" id="input_desc_1" class="input-beuna text-sm mb-1" value="Pengecekan Server Vercel & Log Error">
+                            <input type="text" id="input_kat_1" class="input-beuna text-xs text-gray-500" value="Server Health Check">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1">Aktivitas 2</label>
+                            <input type="text" id="input_desc_2" class="input-beuna text-sm mb-1" value="Update node Google Sheets API di n8n">
+                            <input type="text" id="input_kat_2" class="input-beuna text-xs text-gray-500" value="Automation Update">
+                        </div>
+                    </div>
+                `;
+            }
+
+            formArea.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        // Auto-fill client address simulation
+        function fillClientData() {
+            const select = document.getElementById('input_klien');
+            const addressArea = document.getElementById('input_alamat');
+            if(select.value) {
+                const client = dummyClients.find(c => c.id === select.value);
+                addressArea.value = client.address;
+            } else {
+                addressArea.value = '';
+            }
+        }
+
+        // --- RENDER PDF PREVIEW (Membangun Struktur A4) ---
+        function updatePreview() {
+            const printArea = document.getElementById('print-area');
+            
+            // Ambil data dari Form (dengan fallback jika form belum diisi)
+            const getVal = (id, fallback) => {
+                const el = document.getElementById(id);
+                // Khusus untuk select dropdown, ambil textnya, bukan valuenya (ID)
+                if (el && el.tagName === 'SELECT' && el.selectedIndex > 0) {
+                    return el.options[el.selectedIndex].text;
+                }
+                return el && el.value ? el.value : fallback;
+            };
+
+            const clientName = getVal('input_klien', 'Nama Klien (Pilih dari form)');
+            const clientAddress = getVal('input_alamat', 'Alamat Klien');
+            const projectName = getVal('input_proyek', 'Nama Proyek/Layanan');
+            
+            // Format Tanggal
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            
+            // Generate Random Doc Number based on Type
+            const rand = Math.floor(Math.random() * 99).toString().padStart(3, '0');
+            const docNumStr = `${rand}/BEUNA/${currentDocType.toUpperCase()}/X/2026`;
+            
+            // Render logic based on type
+            let docHeader = '';
+            let mainContent = '';
+            let footerContent = '';
+
+            if (currentDocType === 'invoice') {
+                docHeader = `INVOICE TAGIHAN`;
+                const tglTerbit = getVal('input_tgl_terbit', dateStr);
+                const tglTempo = getVal('input_tgl_tempo', '14 Hari sejak terbit');
+                const termin = getVal('input_termin', 'Termin');
+                const desc1 = getVal('input_desc_1', 'Item Pekerjaan');
+                const harga1 = getVal('input_harga_1', '0');
+
+                mainContent = `
+                    <div class="grid grid-cols-2 gap-10 mb-12">
+                        <div>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Ditagihkan Kepada:</p>
+                            <h3 class="text-lg font-bold">${clientName}</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed">${clientAddress}</p>
+                            <p class="text-sm font-medium mt-1 text-[#800000]">${projectName}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="mb-4">
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tanggal Terbit</p>
+                                <p class="text-sm font-semibold">${tglTerbit}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jatuh Tempo</p>
+                                <p class="text-sm font-semibold">${tglTempo}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <table class="w-full text-left mb-12">
+                        <thead>
+                            <tr class="border-b border-gray-300">
+                                <th class="py-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest w-12">No</th>
+                                <th class="py-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Deskripsi Layanan</th>
+                                <th class="py-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-right">Keterangan</th>
+                                <th class="py-3 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-4 text-gray-400 text-sm">01</td>
+                                <td class="py-4"><p class="font-bold text-sm">${desc1}</p></td>
+                                <td class="py-4 text-right text-xs text-gray-500">${termin}</td>
+                                <td class="py-4 text-right font-bold">Rp ${harga1}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="flex justify-end mb-20">
+                        <div class="w-64 space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Subtotal</span>
+                                <span class="font-medium">Rp ${harga1}</span>
+                            </div>
+                            <div class="pt-3 border-t-2 border-black flex justify-between items-center">
+                                <span class="font-bold">Total Tagihan</span>
+                                <span class="font-bold text-xl text-[#800000]">Rp ${harga1}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                footerContent = `
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Instruksi Pembayaran:</p>
+                        <p class="text-sm font-bold">Bank BCA: 1234-567-890</p>
+                        <p class="text-xs text-gray-500">a.n Dimas / Beuna Technology</p>
+                    </div>
+                `;
+
+            } else if (currentDocType === 'bap') {
+                docHeader = `BERITA ACARA PEMELIHARAAN`;
+                const desc1 = getVal('input_desc_1', 'Aktivitas 1');
+                const kat1 = getVal('input_kat_1', 'Kategori 1');
+                const desc2 = getVal('input_desc_2', 'Aktivitas 2');
+                const kat2 = getVal('input_kat_2', 'Kategori 2');
+                const periode = getVal('input_periode', dateStr);
+
+                mainContent = `
+                    <div class="bg-gray-50 p-6 rounded-2xl mb-10 border border-gray-100">
+                        <p class="text-sm text-gray-600 mb-4 leading-relaxed">
+                            Dengan ini menerangkan bahwa tim spesialis Beuna telah melakukan aktivitas pemeliharaan (maintenance) rutin terhadap sistem/proyek <strong>${projectName}</strong> milik <strong>${clientName}</strong> untuk periode <strong>${periode}</strong> dengan rincian sebagai berikut:
+                        </p>
+                        
+                        <table class="w-full text-left bg-white rounded-lg overflow-hidden border border-gray-200">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="py-3 px-4 text-[11px] font-bold text-gray-600 uppercase tracking-widest w-12">No</th>
+                                    <th class="py-3 px-4 text-[11px] font-bold text-gray-600 uppercase tracking-widest">Detail Pekerjaan</th>
+                                    <th class="py-3 px-4 text-[11px] font-bold text-gray-600 uppercase tracking-widest text-right">Kategori Sistem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-100">
+                                    <td class="py-3 px-4 text-gray-400 text-sm">01</td>
+                                    <td class="py-3 px-4 text-sm">${desc1}</td>
+                                    <td class="py-3 px-4 text-right text-xs text-gray-500"><span class="bg-gray-100 px-2 py-1 rounded">${kat1}</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 text-gray-400 text-sm">02</td>
+                                    <td class="py-3 px-4 text-sm">${desc2}</td>
+                                    <td class="py-3 px-4 text-right text-xs text-gray-500"><span class="bg-gray-100 px-2 py-1 rounded">${kat2}</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                footerContent = `
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Persetujuan:</p>
+                        <p class="text-xs text-gray-500">Dokumen ini merupakan laporan sah. Jika tidak ada sanggahan dalam 3x24 jam, pekerjaan dianggap diterima dengan baik.</p>
+                    </div>
+                `;
+            } else {
+                docHeader = currentDocType.toUpperCase();
+                mainContent = `<div class="py-20 text-center text-gray-400 border-2 border-dashed border-gray-200 rounded-2xl"><p>Isi form di sebelah kiri untuk melihat preview dokumen ${docHeader}.</p></div>`;
+                footerContent = `<div></div>`;
+            }
+
+            // --- THE MASTER A4 TEMPLATE ASSEMBLY ---
+            printArea.innerHTML = `
+                <!-- Background Accent (Hiasan Minimalis) -->
+                <div class="absolute top-0 right-0 w-40 h-40 bg-[#800000] rounded-bl-full opacity-5 no-print pointer-events-none"></div>
+
+                <!-- HEADER SECTION -->
+                <div class="flex justify-between items-start mb-16">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-6">
+                            <!-- SVG Logo Beuna -->
+                            <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="100" height="100" rx="20" fill="#111111"/>
+                                <path d="M30 70V30H45C55 30 60 35 60 42C60 48 55 52 48 53V54C57 55 65 61 65 70C65 80 55 85 45 85H30" stroke="white" stroke-width="8" stroke-linecap="round"/>
+                            </svg>
+                            <div>
+                                <h1 class="text-xl font-bold tracking-tighter leading-none text-black">BEUNA</h1>
+                                <p class="text-[10px] text-gray-500 tracking-[0.2em] uppercase">System Specialist</p>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 space-y-1">
+                            <p class="font-semibold text-gray-800">Beuna Technology Indonesia</p>
+                            <p>Kawasan Automasi Digital, Jakarta</p>
+                            <p>hi@beuna.com | beuna.com</p>
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <h2 class="text-3xl font-black mb-2 tracking-tighter uppercase text-black">${docHeader}</h2>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Nomor Ref</p>
+                        <p class="text-base font-mono font-bold text-gray-800">${docNumStr}</p>
+                    </div>
+                </div>
+
+                <hr class="border-gray-200 mb-10">
+
+                <!-- MAIN DYNAMIC CONTENT -->
+                <div class="min-h-[120mm]">
+                    ${mainContent}
+                </div>
+
+                <!-- FOOTER & SIGNATURE -->
+                <div class="mt-auto absolute bottom-[20mm] left-[20mm] right-[20mm]">
+                    <div class="grid grid-cols-2 gap-10 items-end">
+                        ${footerContent}
+                        <div class="flex flex-col items-center ml-auto">
+                            <p class="text-[11px] text-gray-400 mb-16">Diterbitkan oleh,</p>
+                            <div class="w-48 border-b border-black mb-2 flex justify-center">
+                                <!-- Signature simulation -->
+                                <span class="font-['Brush_Script_MT',cursive] text-2xl text-black -mb-2 opacity-80">Dimas.B</span>
+                            </div>
+                            <p class="text-sm font-bold uppercase tracking-tighter text-black">BEUNA SYSTEM SPECIALIST</p>
+                            <p class="text-[10px] text-gray-400">Automated Generation System</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-10 pt-4 border-t border-gray-100 flex justify-between items-center opacity-40">
+                        <p class="text-[8px] font-mono">SYS-ID: ${Math.random().toString(36).substr(2, 9).toUpperCase()}-${Date.now()}</p>
+                        <p class="text-[8px] font-bold tracking-widest uppercase">Validitas Dokumen Elektronik Terjamin</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize (Start at login)
+        // Jika ingin langsung ke dashboard saat refresh, ganti 'page-login' menjadi 'page-dashboard'
+        navigate('page-login');
+        
+    </script>
+</body>
+</html>
